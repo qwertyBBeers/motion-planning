@@ -1,0 +1,33 @@
+Metadata-Version: 2.4
+Name: motion-toyproject
+Version: 0.1.0
+Summary: Toy 3D motion planning codebase.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Provides-Extra: test
+Requires-Dist: pytest>=7; extra == "test"
+
+# motion-toyproject
+
+Motion planning toy project in Python. This repository provides a small, clean
+codebase to study and extend motion planning algorithms in a 3D environment.
+
+## Goals
+- Random 3D world generation with box and sphere obstacles
+- Random start/goal sampling
+- 3D visualization utilities for debugging and demos
+- Clear structure for refactoring, optimization, and learning-based extensions
+
+## Quick start
+Run the world demo:
+```bash
+python examples/world_demo.py
+```
+
+## Project layout
+- `motion_planning/` core library
+- `examples/` runnable demos
+
+## Notes
+- Visualization requires matplotlib (`pip install matplotlib`).
+- The world is intentionally minimal; extend as needed.

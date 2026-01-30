@@ -1,0 +1,17 @@
+[project]
+name = "motion-toyproject"
+version = "0.1.0"
+description = "Toy 3D motion planning codebase."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["motion_planning", "motion_planning.planners"]
