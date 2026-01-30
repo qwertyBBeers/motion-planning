@@ -1,22 +1,15 @@
-# motion-toyproject
+# motion-planning goal
 
 Minimal 3D motion-planning playground in Python. The goal is a clean, reusable
 base for experimenting with algorithms (A*, RRT, RRG, MPC, etc.), collision
 checking, and visualization.
 
-## Goals
-- Random 3D world generation with box/sphere obstacles
-- Deterministic start/goal setup for reproducible demos
-- 3D visualization utilities for debugging and demos
-- Simple, reusable core you can extend in other projects
+And also, learning about motion-planning, specially optimization-based algorithms 및 learning-based motion planning algorithms.
 
-## Example output
-Place a demo screenshot here:
-```
-docs/world_demo.png
-```
-Then it will show up below:
-![World demo](docs/world_demo.png)
+## A*
+A* is one of the most widely used path-planning algorithms. It uses a heuristic-based cost function to guide the search toward a shortest path.
+The result image is shown below.
+![A*](docs/A*.png)
 
 ## Quick start
 Run the world demo (A* path + visited nodes):
