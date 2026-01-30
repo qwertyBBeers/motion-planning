@@ -4,16 +4,14 @@ import heapq
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
-from ..types import Point3, World, clamp_point, distance
+from ..settings.types import Point3, World, distance
 from .base import PlanResult
-
-
-GridIndex = Tuple[int, int, int]
+from ..modules.grid import Grid3D, GridIndex
 
 
 @dataclass
 class AStarPlanner:
-    resolution: float = 1.0
+    resolution: float = 0.5
     allow_diagonal: bool = False
 
     def plan(self, world: World, start: Point3, goal: Point3) -> PlanResult:
@@ -22,14 +20,16 @@ class AStarPlanner:
         if not world.in_bounds(start) or not world.in_bounds(goal):
             return PlanResult([], False, 0, [])
 
-        start_p = self._snap(world, start)
-        goal_p = self._snap(world, goal)
+        grid = Grid3D(world, self.resolution)
+
+        start_p = grid.snap(start)
+        goal_p = grid.snap(goal)
         if world.collides(start_p) or world.collides(goal_p):
             return PlanResult([], False, 0, [])
 
-        dims = self._grid_dims(world)
-        start_idx = self._to_index(world, start_p)
-        goal_idx = self._to_index(world, goal_p)
+        dims = grid.dims()
+        start_idx = grid.to_index(start_p)
+        goal_idx = grid.to_index(goal_p)
 
         open_heap: List[Tuple[float, float, GridIndex]] = []
         heapq.heappush(open_heap, (0.0, 0.0, start_idx))
@@ -41,14 +41,14 @@ class AStarPlanner:
         while open_heap:
             iterations += 1
             _, curr_g, curr = heapq.heappop(open_heap)
-            visited.append(self._to_point(world, curr))
+            visited.append(grid.to_point(curr))
             if curr == goal_idx:
-                path = self._reconstruct(world, came_from, curr)
+                path = self._reconstruct(grid, came_from, curr)
                 return PlanResult(path, True, iterations, visited)
 
-            curr_p = self._to_point(world, curr)
+            curr_p = grid.to_point(curr)
             for nxt in self._neighbors(curr, dims):
-                nxt_p = self._to_point(world, nxt)
+                nxt_p = grid.to_point(nxt)
                 if world.collides(nxt_p):
                     continue
                 if world.path_collides(curr_p, nxt_p):
@@ -57,37 +57,10 @@ class AStarPlanner:
                 if tentative_g < g_score.get(nxt, float("inf")):
                     came_from[nxt] = curr
                     g_score[nxt] = tentative_g
-                    f = tentative_g + distance(nxt_p, self._to_point(world, goal_idx))
+                    f = tentative_g + distance(nxt_p, grid.to_point(goal_idx))
                     heapq.heappush(open_heap, (f, tentative_g, nxt))
 
         return PlanResult([], False, iterations, visited)
-
-    def _grid_dims(self, world: World) -> GridIndex:
-        dx = int((world.bounds_max[0] - world.bounds_min[0]) / self.resolution)
-        dy = int((world.bounds_max[1] - world.bounds_min[1]) / self.resolution)
-        dz = int((world.bounds_max[2] - world.bounds_min[2]) / self.resolution)
-        return (dx + 1, dy + 1, dz + 1)
-
-    def _snap(self, world: World, p: Point3) -> Point3:
-        bx, by, bz = world.bounds_min
-        rx = round((p[0] - bx) / self.resolution) * self.resolution + bx
-        ry = round((p[1] - by) / self.resolution) * self.resolution + by
-        rz = round((p[2] - bz) / self.resolution) * self.resolution + bz
-        return clamp_point((rx, ry, rz), world.bounds_min, world.bounds_max)
-
-    def _to_index(self, world: World, p: Point3) -> GridIndex:
-        return (
-            int(round((p[0] - world.bounds_min[0]) / self.resolution)),
-            int(round((p[1] - world.bounds_min[1]) / self.resolution)),
-            int(round((p[2] - world.bounds_min[2]) / self.resolution)),
-        )
-
-    def _to_point(self, world: World, idx: GridIndex) -> Point3:
-        return (
-            world.bounds_min[0] + idx[0] * self.resolution,
-            world.bounds_min[1] + idx[1] * self.resolution,
-            world.bounds_min[2] + idx[2] * self.resolution,
-        )
 
     def _neighbors(self, idx: GridIndex, dims: GridIndex) -> List[GridIndex]:
         neighbors: List[GridIndex] = []
@@ -116,11 +89,11 @@ class AStarPlanner:
         return neighbors
 
     def _reconstruct(
-        self, world: World, came_from: Dict[GridIndex, GridIndex], current: GridIndex
+        self, grid: Grid3D, came_from: Dict[GridIndex, GridIndex], current: GridIndex
     ) -> List[Point3]:
-        path = [self._to_point(world, current)]
+        path = [grid.to_point(current)]
         while current in came_from:
             current = came_from[current]
-            path.append(self._to_point(world, current))
+            path.append(grid.to_point(current))
         path.reverse()
         return path

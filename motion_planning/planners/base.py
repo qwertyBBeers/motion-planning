@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Protocol
 
-from ..types import Point3, World
+from ..settings.types import Point3, World
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,9 @@
-from .types import Box, Point3, Sphere, World
-from .env import RandomWorld
-from .visualize import plot_world
+from .settings.types import Box, Point3, Sphere, World
+from .settings.env import RandomWorld
+from .settings.visualize import plot_world
 from .planners.astar import AStarPlanner
 from .planners.base import PlanResult, Planner
+from .modules.grid import Grid3D, GridIndex
 
 __all__ = [
     "Box",
@@ -14,4 +15,6 @@ __all__ = [
     "AStarPlanner",
     "PlanResult",
     "Planner",
+    "Grid3D",
+    "GridIndex",
 ]
