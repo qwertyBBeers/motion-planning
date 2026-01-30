@@ -9,7 +9,9 @@ And also, learning about motion-planning, specially optimization-based algorithm
 ## A*
 A* is one of the most widely used path-planning algorithms. It uses a heuristic-based cost function to guide the search toward a shortest path.
 The result image is shown below.
-![A*](docs/A*.png)
+<p align="center">
+  <img src="docs/A*.png" alt="A*" />
+</p>
 
 ## Quick start
 Run the world demo (A* path + visited nodes):
