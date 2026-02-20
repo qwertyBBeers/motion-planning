@@ -1,5 +1,10 @@
 # motion-planning goal
 
+## Table of Contents
+- [A*](#a)
+- [RRT](#rrt)
+- [RRT*](#rrt-1)
+
 Minimal 3D motion-planning playground in Python. The goal is a clean, reusable
 base for experimenting with algorithms (A*, RRT, RRG, MPC, etc.), collision
 checking, and visualization.
