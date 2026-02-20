@@ -17,7 +17,6 @@ class Box:
             and self.min_corner[2] <= p[2] <= self.max_corner[2]
         )
 
-
 @dataclass(frozen=True)
 class Sphere:
     center: Point3
@@ -26,9 +25,7 @@ class Sphere:
     def contains(self, p: Point3) -> bool:
         return distance(self.center, p) <= self.radius
 
-
 Obstacle = Box | Sphere
-
 
 @dataclass(frozen=True)
 class World:

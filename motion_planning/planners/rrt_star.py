@@ -10,17 +10,15 @@ from .base import PlanResult
 
 @dataclass
 class RRTStarPlanner:
-    # 한 번에 확장할 최대 거리.
+    # 한 번에 확장할 최대 거리
     step_size: float = 0.5
-    # 샘플링 반복 횟수 상한.
+    # 샘플링 반복 횟수
     max_iters: int = 2000
-    # 목표를 직접 샘플링할 확률(골 바이어스).
     goal_sample_rate: float = 0.05
-    # 리와이어에 사용할 이웃 반경(없으면 기본값 사용).
     neighbor_radius: Optional[float] = None
 
     def plan(self, world: World, start: Point3, goal: Point3) -> PlanResult:
-        # 기본 입력 유효성 검사.
+        # 기본 입력
         if self.step_size <= 0.0 or self.max_iters <= 0:
             return PlanResult([], False, 0, [])
         if not world.in_bounds(start) or not world.in_bounds(goal):
