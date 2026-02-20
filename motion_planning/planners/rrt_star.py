@@ -2,20 +2,22 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from ..settings.types import Point3, World, distance
 from .base import PlanResult
 
 
 @dataclass
-class RRTPlanner:
-    # 최대 거리
+class RRTStarPlanner:
+    # Maximum distance to extend the tree in one step.
     step_size: float = 0.5
-    # 샘플링 숫자
-    max_iters: int = 1000
+    # Maximum number of sampling iterations.
+    max_iters: int = 2000
     # Probability of sampling the goal directly (goal bias).
     goal_sample_rate: float = 0.05
+    # Radius used to select nearby nodes for rewire; if None, a default is used.
+    neighbor_radius: Optional[float] = None
 
     def plan(self, world: World, start: Point3, goal: Point3) -> PlanResult:
         # Basic input validation.
@@ -26,38 +28,72 @@ class RRTPlanner:
         if world.collides(start) or world.collides(goal):
             return PlanResult([], False, 0, [])
 
-        # Tree storage: nodes and parent indices.
+        # Tree data structures: nodes list, parent indices, and cost-to-come.
         rng = random.Random()
         nodes: List[Point3] = [start]
         parents: List[int] = [-1]
+        costs: List[float] = [0.0]
         visited: List[Point3] = []
+
+        # Fixed neighbor radius for simplicity in this toy implementation.
+        radius = self.neighbor_radius
+        if radius is None:
+            radius = self.step_size * 2.5
 
         for i in range(self.max_iters):
             # Sample a random point with goal bias.
             sample = self._sample(world, goal, rng)
-            # Extend the tree toward the sample.
+            # Find nearest existing node and extend toward the sample.
             nearest_idx = self._nearest(nodes, sample)
             nearest = nodes[nearest_idx]
             new_pt = self._steer(nearest, sample, self.step_size)
+
+            # Skip if the new point does not move or collides.
             if distance(new_pt, nearest) < 1e-9:
                 continue
             if world.collides(new_pt) or world.path_collides(nearest, new_pt):
                 continue
 
+            # Choose the best parent among neighbors to minimize cost.
+            neighbor_indices = self._neighbors(nodes, new_pt, radius)
+            best_parent = nearest_idx
+            best_cost = costs[nearest_idx] + distance(nearest, new_pt)
+            for n_idx in neighbor_indices:
+                n_pt = nodes[n_idx]
+                if world.path_collides(n_pt, new_pt):
+                    continue
+                c = costs[n_idx] + distance(n_pt, new_pt)
+                if c < best_cost:
+                    best_cost = c
+                    best_parent = n_idx
+
             # Add the new node to the tree.
             nodes.append(new_pt)
-            parents.append(nearest_idx)
+            parents.append(best_parent)
+            costs.append(best_cost)
             visited.append(new_pt)
+            new_idx = len(nodes) - 1
 
-            # If close enough, attempt to connect directly to the goal.
+            # Rewire: try to improve nearby nodes by going through new_pt.
+            for n_idx in neighbor_indices:
+                n_pt = nodes[n_idx]
+                alt_cost = best_cost + distance(new_pt, n_pt)
+                if alt_cost + 1e-9 < costs[n_idx]:
+                    if not world.path_collides(new_pt, n_pt):
+                        parents[n_idx] = new_idx
+                        costs[n_idx] = alt_cost
+
+            # If close enough to goal, attempt final connection.
             if distance(new_pt, goal) <= self.step_size:
                 if not world.path_collides(new_pt, goal) and not world.collides(goal):
                     nodes.append(goal)
-                    parents.append(len(nodes) - 2)
+                    parents.append(new_idx)
+                    costs.append(best_cost + distance(new_pt, goal))
                     visited.append(goal)
                     path = self._reconstruct(nodes, parents, len(nodes) - 1)
                     return PlanResult(path, True, i + 1, visited)
 
+        # Failed to find a path within max_iters.
         return PlanResult([], False, self.max_iters, visited)
 
     def _sample(self, world: World, goal: Point3, rng: random.Random) -> Point3:
@@ -80,6 +116,16 @@ class RRTPlanner:
                 best_dist = d
                 best_idx = i
         return best_idx
+
+    def _neighbors(self, nodes: List[Point3], target: Point3, radius: float) -> List[int]:
+        # Collect neighbors within the fixed radius.
+        neighbors: List[int] = []
+        for i, p in enumerate(nodes):
+            if distance(p, target) <= radius:
+                neighbors.append(i)
+        if not neighbors:
+            neighbors.append(self._nearest(nodes, target))
+        return neighbors
 
     def _steer(self, src: Point3, dst: Point3, step: float) -> Point3:
         # Move from src toward dst by at most step.
